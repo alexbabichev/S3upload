@@ -1,0 +1,10 @@
+{
+  "name": "errors",
+  "description": "A simple helper for easily uploading files to Amazon S3 from Meteor. This package will also make Knox available server-side.",
+  "homepage": "https://github.com/tmeasday/meteor-errors",
+  "author": "Alex Babichev <alex.ross.ua@gmail.com>",
+  "version": "0.1.0",
+  "git": "https://github.com/tmeasday/meteor-errors.git",
+  "packages": {
+  }
+}
