@@ -7,6 +7,7 @@ var fs = Npm.require('fs');
 var knox;
 var S3;
 
+
 Meteor.methods({
 	S3config: function(obj){
 		knox = Knox.createClient(obj);
@@ -15,28 +16,45 @@ Meteor.methods({
 	
 	S3upload: function(fileInfo, fileData, metadata){
 		
+		this.unblock();
+		
 		var file_id = Files.insert({name: fileInfo.name, metadata: metadata});
 		
-		var folder = ''; if (metadata.folder) folder = metadata.folder + '/',
-				extension = (fileInfo.name).match(/\.[0-9a-z]{1,5}$/i),
-				S3path = S3.directory+folder+file_id+extension;
-
-		var dir = '../../../../../tmp/',
-				temp_name = dir + file_id;
-					
-		fs.writeFile(temp_name, fileData, {encoding: 'binary'}, function(){
-			var put = knox.putFile(temp_name, S3path, function(err, res){
-				res.resume();
-			});
-			put.on('progress', function(res){
-				Files.update({_id: file_id}, {$set: {res: res}});
-			});
-			put.on('error', function(error){
-				throw new Meteor.Error(500, 'Internal Server Error', error);
-			});			
-		});
+		if (file_id)
+		{
 		
-		return file_id;
+			var folder = ''; if (metadata.folder) folder = metadata.folder + '/',
+					extension = (fileInfo.name).match(/\.[0-9a-z]{1,5}$/i),
+					S3path = S3.directory+folder+file_id+extension;
+	
+			var dir = '../../../../../tmp/',
+					temp_name = dir + file_id;
+						
+			fs.writeFile(temp_name, fileData, {encoding: 'binary'}, function(error){
+			
+				if (error) throw new Meteor.Error(500, 'Internal Server Error', error);
+				
+					var put = knox.putFile(temp_name, S3path, function(err, res){
+						res.resume();
+						console.log(1111, temp_name, S3path);
+					});		
+					
+					Meteor._wrapAsync(put, put.on);
+								
+					put.on('progress', function(res){
+						Files.update({_id: file_id}, {$set: {res: res}});
+					});
+					put.on('error', function(error){
+						throw new Meteor.Error(500, 'Internal Server Error', error);
+					});
+					
+			});
+
+			return file_id;
+		
+		}
+		
+		
 	},
 	
 	S3upload_from_path: function(){
