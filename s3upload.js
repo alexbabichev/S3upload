@@ -1,3 +1,6 @@
+/* --------------------------------------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------------------------------------- */
 
 var Knox = Npm.require("knox");
 var Future = Npm.require('fibers/future');
@@ -8,22 +11,40 @@ var streamBuffers = Npm.require("stream-buffers");
 var knox;
 var S3;
 
+/* --------------------------------------------------------------------------------------------------------- */
+
 Meteor.methods({
+	
+	/* ------------------------------------------------------------------------------------------------------- */
+
 	S3config: function(obj){
 		knox = Knox.createClient(obj);
 		S3 = {directory:obj.directory || "/"};
 	},
 	
+	/* ------------------------------------------------------------------------------------------------------- */
+	
 	S3upload: function(options){
-
+	
 		var user_id = this.userId;
 		var file = options.file,
     		context = options.context,
-				callback = options.callback;
+				callback = options.callback,
+				title = options.title || '';
 				
-		var folder = (metadata.folder) ? folder = metadata.folder + '/' : '',
-				extension = (fileInfo.name).match(/\.[0-9a-z]{1,5}$/i),
-				path = S3.directory + folder + '/' + file_id + extension;
+    var file_id = S3files.insert({
+    		name: file.name, 
+    		metadata: { 
+    			mime_type: file.type,
+    			size: file.size,
+    		}, 
+    		user: user_id,
+    		title: title
+		});
+
+		var folder = (options.folder) ? folder = options.folder + '/' : '',
+				extension = (file.name).match(/\.[0-9a-z]{1,5}$/i),
+				path = S3.directory + folder + file_id + extension;
     
 		var file_stream_buffer = new streamBuffers.ReadableStreamBuffer({
       	frequency: 10,       	// in milliseconds.
@@ -32,6 +53,8 @@ Meteor.methods({
     
     var future = new Future(),
     		buffer = new Buffer(file.data);
+    		
+
 
 		file_stream_buffer.put(buffer);
 
@@ -48,29 +71,34 @@ Meteor.methods({
     });    
     
     put.on('progress', Meteor.bindEnvironment(function(progress){
-        S3files.update({file_name: file.name}, {$set: {percent_uploaded: progress.percent}});
+        S3files.update({_id: file_id}, {$set: {percent_uploaded: progress.percent}});
       })
     );
 
     put.on('error', Meteor.bindEnvironment(function(error){
-        S3files.update({file_name: file.name}, {$set: {error: true}});
+        S3files.update({_id: file_id}, {$set: {error: true}});
         throw new Meteor.Error(500, 'Internal Server Error', error);
       })
     );    
 
     var url = knox.http(future.wait());
     if(url != null){
-      S3files.update({file_name: file.name}, {$set: {url: url}});
+      S3files.update({_id: file_id}, {$set: {url: url, path: path}});
       if(typeof callback == 'string'){
         Meteor.call(callback, url, context);
       }
+      return url;
     }
 
 	},
+
+	/* ------------------------------------------------------------------------------------------------------- */
 	
 	S3upload_from_http: function(options){
 	
 	},
+
+	/* ------------------------------------------------------------------------------------------------------- */
 	
 	S3upload_from_path: function(options){
 		
@@ -90,6 +118,8 @@ Meteor.methods({
 			throw new Meteor.Error(500, 'Internal Server Error', error);
 		});
 	},
+
+	/* ------------------------------------------------------------------------------------------------------- */
 	
 	S3delete: function(file_id, callback){
 		var path = file.user + "/" + file.file_name;
@@ -100,6 +130,8 @@ Meteor.methods({
 			else throw new Meteor.Error(500, 'Internal Server Error');
 		});
 	},
+
+	/* ------------------------------------------------------------------------------------------------------- */
 	
 	S3list: function(path){
 		var future = new Future();
@@ -114,3 +146,5 @@ Meteor.methods({
 	}
 	
 });
+
+/* --------------------------------------------------------------------------------------------------------- */
