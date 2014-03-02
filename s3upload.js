@@ -37,6 +37,8 @@ Meteor.methods({
     		metadata: { 
     			mime_type: file.type,
     			size: file.size,
+    			type: options.type,
+    			doc_id: options.doc_id
     		}, 
     		user: user_id,
     		title: title
@@ -53,8 +55,6 @@ Meteor.methods({
     
     var future = new Future(),
     		buffer = new Buffer(file.data);
-    		
-
 
 		file_stream_buffer.put(buffer);
 

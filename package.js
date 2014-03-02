@@ -15,6 +15,7 @@ Package.on_use(function (api) {
 	api.add_files('s3upload.js', 'server');
 	api.add_files('collection/s3files.js', ['client', 'server']);
 	
-	api.export && api.export("Knox","server");
+	api.export && api.export("Knox", "server");
+	api.export && api.export("S3files", ['client', 'server']);
 	
 });
