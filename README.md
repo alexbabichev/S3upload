@@ -17,9 +17,10 @@ mrt add S3Upload
 ```
 
 ## Methods
-	- S3config
-	- S3upload
-	- S3upload_from_http
-	- S3upload_from_path
-	- S3delete
-	- S3list
+	S3config 
+	S3upload 
+	S3upload_from_http
+	S3upload_from_path
+	S3thumbnail
+	S3delete
+	S3list
