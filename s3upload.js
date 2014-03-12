@@ -97,6 +97,7 @@ Meteor.methods({
 	S3thumbnail: function(options){
 		
 		var filename = (options.url).split('/');
+				src_id = ((filename[filename.length-1]).split('.'))[0],
 				filename = 'thumbnail_'+filename[filename.length-1],
 				folder = (options.folder) ? folder = options.folder + '/' : '',
 				path = S3.directory + folder + filename;
@@ -137,7 +138,13 @@ Meteor.methods({
     }
     
     var temp = (options.url).split('/');
-    return temp[0]+temp[1]+'//'+temp[2]+path;
+    		temp = temp[0]+temp[1]+'//'+temp[2]+path;
+    		
+    console.log(src_id);
+    
+    S3files.update({_id: src_id}, {$set: {th_url: temp}});
+    
+    return temp;
 	},
 
 	/* ------------------------------------------------------------------------------------------------------- */
@@ -175,7 +182,7 @@ Meteor.methods({
 
 		var future = new Future();
 
-		var put = knox.putFile(file_path, path, function(err, res){
+		var put = knox.putFile(file_path, path, function(error, res){
       if(res)
         future.return(path);
 			else  
